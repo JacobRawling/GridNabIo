@@ -1,5 +1,5 @@
 /*
- *
+ * Brief: Tools for managing the UI 
  *
  * Author: Jacob rawling
  * Date: 06/2016
