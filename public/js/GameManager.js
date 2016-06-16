@@ -5,58 +5,64 @@
  * Date: 06/2016
  * Email: Rawling.Jacob@gmail.com
  */
-
 //GameManager class
-var GameManager = function(){
- };
-
-GameManager.prototype.initilaizeCanvas = function(){
-  // Get the canvas element form the page
-  var canvas = document.getElementById("canvas");
+function GameManager(bgColor){
+	this.canvas = $("#canvas")[0];
+	this.ctx = canvas.getContext("2d");
 
   //Resize the canvas to occupy the full page
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
+  this.canvas.width  = window.innerWidth;
+  this.canvas.height = window.innerHeight;
 
-  var ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#FF0000";
-  ctx.fillRect(0,0,window.innerWidth,window.innerHeight);
-}
+	this.canvasWidth  = $("#canvas").width();
+	this.canvasHeight = $("#canvas").height();
+  this.bgColor = bgColor;
+
+	//create a container for the players
+	this.players = [];
+	this.players.push(new Player(10, this.ctx, this.canvasWidth ,this.canvasHeight));
+
+ }
+
 
 GameManager.prototype.RenderFrame = function(){
-    PaintCanvas();
-    snake.Update();
-}
+    this.PaintCanvas();
+};
 
 GameManager.prototype.PaintCanvas = function(){
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, w, h);
-  ctx.strokeStyle = "black";
-  ctx.strokeRect(0, 0, w, h);
-}
-$(document).ready(function(){
-	var canvas = $("#canvas")[0];
-	var ctx = canvas.getContext("2d");
-	var w = $("#canvas").width();
-	var h = $("#canvas").height();
-  var key;
-  var snake = new Snake(5,10,ctx,w,h);
+  this.ctx.fillStyle = this.bgColor;
+  this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasWidth);
+  this.ctx.strokeStyle = "black";
+  this.ctx.strokeRect(0, 0, this.canvasWidth, this.canvasWidth);
+};
 
-  function PaintCanvas(){
-  	ctx.fillStyle = "white";
-  	ctx.fillRect(0, 0, w, h);
-  	ctx.strokeStyle = "black";
-  	ctx.strokeRect(0, 0, w, h);
+GameManager.prototype.Update = function(){
+  this.PaintCanvas();
+
+	for( i = 0; i < this.players.length; i++){
+		this.players[i].Update();
+	}
+
+};
+
+GameManager.prototype.KeyPress = function(key){
+	for( i = 0; i < this.players.length; i++){
+		this.players[i].ManageMovement(key);
+	}
+};
+
+$(document).ready(function(){
+  var gameManager = new GameManager("#FF0000");
+
+  function Update(){
+    gameManager.Update();
   }
-  function RenderFrame(){
-    PaintCanvas();
-    snake.Update();
-  }
+
   $(document).keydown(function(e){
     key = e.which;
-    snake.ManageMovement(key);
+    gameManager.KeyPress(key);
   })
 
   //every 60ms render the frame
-  game_loop =setInterval(RenderFrame, 60);
+  game_loop =setInterval(Update, 60);
 })
