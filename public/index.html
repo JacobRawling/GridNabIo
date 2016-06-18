@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 <html>
+<!---
+TODO:
+<ul>
+  <li>GameObject/Player class that contains a physics body + JSON export for networking </li>
+  <li>Work on server class that sets up world + accepts new players etc.</li>
+  <li>Player controllers + sending from client to server</li>
+</ul>
+ !-->
     <head>
       <title>GridGrab.io</title>
       <style type="text/css">
@@ -13,6 +21,40 @@
       <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
       <script src="js/Player.js" type="text/javascript"></script>
       <script src="js/GameManager.js" type="text/javascript"></script>
+
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        var socket = io();
+        var physicsWorld = [];
+
+        socket.on('update', function(msg){
+          physicsWorld = msg;
+          console.log(physicsWorld);
+        });
+
+         update = function(  ){
+          var canvas = document.getElementById("canvas");
+          var ctx = canvas.getContext("2d");
+
+          console.log(physicsWorld)
+          ctx.clearRect(0,0, canvas.width,canvas.height);
+          ctx.font = "30px Arial";
+          ctx.fillStyle = "black";
+          if(physicsWorld){
+            for(var i = 0;i<physicsWorld.length;i++){
+              ctx.fillText("x: " +  physicsWorld[i].x + " y: " + physicsWorld[i].y  ,10,50+i*100);
+            }
+          }
+          ctx.fillStyle = "blue";
+
+          game_loop =setInterval(update, 60);
+        }
+        $(document).ready(function() {
+          game_loop =setInterval(update, 60);
+        });
+
+
+      </script>
     </head>
     <body>
         <canvas id="canvas"></canvas>

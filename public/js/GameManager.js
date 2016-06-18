@@ -64,5 +64,5 @@ $(document).ready(function(){
   })
 
   //every 60ms render the frame
-  game_loop =setInterval(Update, 60);
+//  game_loop =setInterval(Update, 60);
 })
