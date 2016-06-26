@@ -7,6 +7,51 @@ var util = require("util");			     	// Utility resources (logging, object inspec
 var p2   = require('p2');              //the physics engine
 var world;
 
+var players = [];
+var playerSeed = 0;
+
+
+function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID){
+  //When updating clients about GameObjects the creation of this Object
+  // Full infomation will be sent
+  this.fullInfomation = {
+    x: posX,
+    y: posY,
+    Mass: mass,
+    Shape: shape,
+    ShapeInfo: shapeInfo,
+    DisplayInfo: displayInfo,
+    PlayerID: playerID
+  }
+  // When sending a
+  this.position = {
+    x: 0,
+    y: 0
+  }
+
+  this.body = new p2.Body({
+      mass: mass,
+      position: [posX, posY]
+  });
+
+  this.CreateShape = function(shape,shapeInfo){
+    switch(shape){
+      default:
+      case "circle":
+         var shape = new p2.Circle({ radius: shapeInfo });
+         this.body.addShape(shape);
+         break;
+     case "plane":
+        var shape = new p2.Plane();
+        this.body.addShape(shape);
+        break;
+    }
+  }
+  this.CreateShape(shape,shapeInfo);
+};
+
+
+
 init = function(){
    //Add the public directory to the request path for users
    app.use(express.static(__dirname + '/public'));
@@ -30,6 +75,13 @@ init = function(){
 onSocketConnection = function(socket){
 	util.log("New player has connected:");
 
+  initPlayer();
+
+  //this.broadcast.emit("new player", players[players.len-1].fullInfomation);
+
+  this.emit("set id", {id: playerSeed-1});
+  console.log("New player created");
+
   // Listen for client disconnected
 	socket.on("disconnect", onClientDisconnect);
 
@@ -44,47 +96,23 @@ onSocketConnection = function(socket){
 onClientDisconnect = function() {
 };
 
+initPlayer = function(){
+  var newPlayer = new GameObject(0,0,5,"circle",35, "green",playerSeed);
+  world.addBody(newPlayer.body);
+  players.push(newPlayer);
+  playerSeed++;
+}
 // New player has joined
 onNewPlayer = function(data) {
-/*
-  // Create a new player
-	var newPlayer = new Player(data.x, data.y);
-	newPlayer.id = id;
 
-	// Broadcast new player to connected socket clients
-	broadcast.emit("new player", {id: newPlayer.id, x: newPlayer.getX(), y: newPlayer.getY()});
-
-	// Send existing players to the new player
-	var i, existingPlayer;
-	for (i = 0; i < players.length; i++) {
-		existingPlayer = players[i];
-		emit("new player", {id: existingPlayer.id, x: existingPlayer.getX(), y: existingPlayer.getY()});
-	};
-
-	// Add new player to the players array
-	players.push(newPlayer);*/
 };
 
 // Player has moved
 onMovePlayer = function(data){
-  /*
-	// Find player in array
-	var movePlayer = playerById(id);
-
-	// Player not found
-	if (!movePlayer) {
-		util.log("Player not found: "+id);
-		return;
-	};
-
-	// Update player position
-	movePlayer.setX(data.x);
-	movePlayer.setY(data.y);
-
-	// Broadcast updated position to connected socket clients
-	broadcast.emit("move player", {id: movePlayer.id, x: movePlayer.getX(), y: movePlayer.getY()});*/
+  len = Math.sqrt(data.x*data.x+data.y*data.y);
+  var dir = [data.x/len, data.y/len];
+  //circleBody.applyImpulseLocal(dir);
 };
-
 
 initPhysics = function(){
   // Create a physics world, where bodies and constraints live
@@ -92,36 +120,16 @@ initPhysics = function(){
     gravity:[0, -9.82]
   });
 
-  // Create an empty dynamic body
-  var circleBody = new p2.Body({
-      mass: 5,
-      position: [0, 100]
-  });
+  initPlayer();
 
-  // Create an empty dynamic body
-  var circleBod2y = new p2.Body({
-      mass: 5,
-      position: [0.2, 80]
-  });
-
-  // Add a circle shape to the body.
-  var circleShape = new p2.Circle({ radius: 1 });
-  var circleShape2 = new p2.Circle({ radius: 1.5 });
-  circleBody.addShape(circleShape);
-  circleBod2y.addShape(circleShape2);
-  // ...and add the body to the world.
-  // If we don't add it to the world, it won't be simulated.
-  world.addBody(circleBody);
-  world.addBody(circleBod2y);
   // Create an infinite ground plane.
   var groundBody = new p2.Body({
-      mass: 0 // Setting mass to 0 makes the body static
+      mass: 0 ,// Setting mass to 0 makes the body static
+      position: [0, -200]
   });
   var groundShape = new p2.Plane();
   groundBody.addShape(groundShape);
   world.addBody(groundBody);
-  bodies = [groundBody,circleBody,circleBod2y];
-
   // To get the trajectories of the bodies,
   // we must step the world forward in time.
   // This is done using a fixed time step size.
@@ -131,10 +139,11 @@ initPhysics = function(){
 
 getJSONWorld = function(){
     var JSONworld = []
-    for(var i = 0; i < bodies.length;i ++ ){
+    for(var i = 0; i < players.length;i ++ ){
       JSONworld.push(
-      {x: bodies[i].position[0],
-       y: bodies[i].position[1] });
+      {x: players[i].body.position[0],
+       y: players[i].body.position[1],
+      id: players[i].fullInfomation.PlayerID});
     }
     return JSONworld;
 };
@@ -143,11 +152,8 @@ update = function(){
   // The step method moves the bodies forward in time.
   world.step(timeStep);
 
-  // Print the circle position to console.
-  // Could be replaced by a render call.
-
   //Convert world to JSON
-  io.emit('update', getJSONWorld());
+  io.emit("update", getJSONWorld());
 }
 
 init();

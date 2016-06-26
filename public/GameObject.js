@@ -1,5 +1,10 @@
 /*
+ *
+ *
+ * Author: Jacob Rawling (Rawling.Jacob@gmail.com)
+ * Date: 06/2016
  */
+
  function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo, playerID){
    //When updating clients about GameObjects the creation of this Object
    // Full infomation will be sent
@@ -14,19 +19,33 @@
    }
    // When sending a
    this.position = {
-     x: posX,
-     y: posY
+     x: 0,
+     y: 0
    }
-}
-GameObject.prototype.SetPosition = function(X,Y){
-  this.position.x = x;
-  this.position.y = y;
-  this.fullInfomation.x = x;
-  this.fullInfomation.y = y;
-};
+
+   this.body = new p2.Body({
+       mass: mass,
+       position: [posX, posY]
+   });
+   function CreateShape(shape,shapeInfo){
+     switch(shape){
+       default:
+       case "circle":
+          var shape = new p2.Circle({ radius: shapeInfo });
+          this.body.addShape(shape);
+          break;
+      case "plane":
+         var shape = new p2.Plane();
+         this.body.addShape(shape);
+         break;
+     }
+   }
+   CreateShape(shape,shapeInfo);
+ }
+
 GameObject.prototype.Update = function(camera){
   var that = this;
-  switch(that.Shape){
+  switch(shape){
     default:
     case "circle":
       camera.DrawCircle(that.position.x, that.position.y,that.shapeInfo);
