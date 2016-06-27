@@ -7,7 +7,7 @@ var util = require("util");			     	// Utility resources (logging, object inspec
 var p2   = require('p2');              //the physics engine
 var world;
 
-var players = [];
+var players = {};
 var sockets = {};
 var playerSeed = 0;
 
@@ -35,6 +35,7 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID){
       position: [posX, posY]
   });
 
+  this.body.applyDamping(0);
   this.CreateShape = function(shape,shapeInfo){
     switch(shape){
       default:
@@ -103,15 +104,15 @@ function getRandomArbitrary(min, max) {
 initPlayer = function(socket){
   var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),5,"circle",35, getRandomColor(),playerSeed);
   world.addBody(newPlayer.body);
-  players.push(newPlayer);
+  players[playerSeed]  = newPlayer;
   util.log("[INFO] Created player object: " + playerSeed);
   playerSeed = playerSeed+1;
 
   //now tell the client about the ID + other players
   socket.emit("set id", {id: playerSeed-1, DisplayInfo: newPlayer.fullInfomation.DisplayInfo});
-  for(var i  = 0; i < players.length;i++){
-    if(players[i].fullInfomation.PlayerID != playerSeed-1){
-      socket.emit("new player", players[i].fullInfomation);
+  for(var key in players){
+    if(key != playerSeed-1){
+      socket.emit("new player", players[key].fullInfomation);
     }
   }
 }
@@ -122,15 +123,19 @@ onNewPlayer = function(data) {
 
 // Player has moved
 onMovePlayer = function(data){
-  len = Math.sqrt(data.x*data.x+data.y*data.y);
-  var dir = [data.x/len, data.y/len];
-  //circleBody.applyImpulseLocal(dir);
+  var moveStrength = 4;
+  var len = Math.sqrt(data.x*data.x+data.y*data.y);
+
+  var dir = [moveStrength*data.x/len,moveStrength*data.y/len];
+  if(players[data.id]){
+    players[data.id].body.applyImpulseLocal(dir);
+  }
 };
 
 initPhysics = function(){
   // Create a physics world, where bodies and constraints live
   world = new p2.World({
-    gravity:[0, 9.82]
+    gravity:[0,0]
   });
   var worldHalfSize = 500;
   // Create an infinite ground plane.
@@ -185,11 +190,11 @@ function getRandomColor() {
 
 getJSONWorld = function(){
     var JSONworld = []
-    for(var i = 0; i < players.length;i ++ ){
+    for(var key in players ){
       JSONworld.push(
-      {x: players[i].body.position[0],
-       y: players[i].body.position[1],
-      id: players[i].fullInfomation.PlayerID});
+      {x: players[key].body.position[0],
+       y: players[key].body.position[1],
+      id: players[key].fullInfomation.PlayerID});
     }
     return JSONworld;
 };

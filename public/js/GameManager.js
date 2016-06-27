@@ -70,23 +70,20 @@ GameManager.prototype.PaintCanvas = function(){
 
 GameManager.prototype.Update = function(){
 	//clear the
-  this.ctx.clearRect(0,0, this.canvas.width,this.canvas.height);
-
+  //this.ctx.clearRect(0,0, this.canvas.width,this.canvas.height);
+	this.camera.DrawBackground();
 	//move the camera to the player
 	if(this.players[this.playerID]){
-		this.camera.CentreOn(this.players[this.playerID].position.x*this.camera.scale,
-										 	   this.players[this.playerID].position.y*this.camera.scale);
+		this.camera.CentreOn(this.players[this.playerID].position.x,
+										 	   this.players[this.playerID].position.y);
 	}else{
 		console.log("Failed to find playerID: " + this.playerID);
 		console.log("Players: " + Object.keys(this.players).length + " " + Object.keys(this.players)[0]);
 	}
 
 	//update the other players
-	var i = 1;
 	for( var key in this.players){
 		this.players[key].Update(this.camera);
-	  this.ctx.fillText("px: " + 	this.players[key].position.x + " py: " + this.players[key].position.y,10,i*50);
-		i++;
 	}
 
 
@@ -106,17 +103,22 @@ $(document).ready(function(){
   gameManager = new GameManager("#FFFFFF");
 
 	//add onclick behaviour to the game
-	$("#canvas")[0].addEventListener('click', function(event) {
-		var xPosition = -event.clientX -  physicsWorld[0].x/gameManager.camera.scale;
-		var yPosition = -event.clientY +   physicsWorld[0].y/gameManager.camera.scale;
+	$("#canvas")[0].addEventListener('mousemove', function(event) {
+		var clickPos = gameManager.camera.ToWorldCoords(event.clientX,event.clientY);
+		var xPosition =  clickPos[0] - 	gameManager.players[gameManager.playerID].position.x;
+		var yPosition =  clickPos[1] - 	gameManager.players[gameManager.playerID].position.y;
 
 		socket.emit("move player",{
 			x: xPosition,
-			y: yPosition
+			y: yPosition,
+			id: gameManager.playerID
 		});
 
 	 }, false);
 
+ 	$("#canvas")[0].addEventListener('click', function(event) {
+		gameManager.camera.scale += 0.05;
+ 	});
 	function Update(){
 	 gameManager.Update();
 	}
