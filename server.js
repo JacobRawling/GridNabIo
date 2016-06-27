@@ -209,6 +209,19 @@ getJSONWorld = function(){
     return JSONworld;
 };
 
+function shootBullet( position,direction, playerID ){
+  //keep track of players with shoot timer
+  //keep track of bullets shot + ids + colors
+  //update output world to include bullet locations
+
+  var shape = new p2.Circle({ radius: 10 });
+  var body = new p2.Body({
+      mass: mass,
+      position: [position.x, position.y]
+  });
+  body.addShape(shape);
+  world.addBody(body);
+}
 update = function(){
   // The step method moves the bodies forward in time.
   world.step(timeStep);

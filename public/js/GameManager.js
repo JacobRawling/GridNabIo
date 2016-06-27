@@ -124,7 +124,7 @@ $(document).ready(function(){
 	 }, false);
 
  	$("#canvas")[0].addEventListener('click', function(event) {
-		gameManager.camera.scale += 0.05;
+//		gameManager.camera.scale += 0.05;
  	});
 	function Update(){
 	 gameManager.Update();
