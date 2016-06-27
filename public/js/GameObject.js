@@ -19,17 +19,17 @@
    }
 }
 GameObject.prototype.SetPosition = function(X,Y){
-  this.position.x = x;
-  this.position.y = y;
-  this.fullInfomation.x = x;
-  this.fullInfomation.y = y;
+  this.position.x = X;
+  this.position.y = Y;
+  this.fullInfomation.x = X;
+  this.fullInfomation.y = Y;
 };
 GameObject.prototype.Update = function(camera){
   var that = this;
   switch(that.Shape){
     default:
     case "circle":
-      camera.DrawCircle(that.position.x, that.position.y,that.shapeInfo);
+      camera.DrawCircle(that.position.x, that.position.y,that.fullInfomation.ShapeInfo,that.fullInfomation.DisplayInfo);
       break;
   }
 }

@@ -19,10 +19,15 @@ socket.on("update", function(msg){
 	}
 });
 
+//Server tells client there is a new player entered
 socket.on("new player", function(msg){
-	gameManager.players[msg.playerID] =  new GameObject(0,0,5,"circle", 25,"green", -1);
-	gameManager.players[msg.playerID].fullInfomation = msg;
-	gameManager.players.SetPosition(msg.x,msg.y);
+	gameManager.players[msg.PlayerID] =  new GameObject(0,0,5,"circle", 35,"green", msg.playerID);
+	gameManager.players[msg.PlayerID].fullInfomation = msg;
+	gameManager.players[msg.PlayerID].SetPosition(msg.x,msg.y);
+
+	console.log(" New player info recieved col: " + msg.DisplayInfo ); 
+//	console.log(	gameManager.players[msg.playerID].fullInfomation);
+//	console.log( gameManager.players )
 });
 
 socket.on("set id", function(msg){
@@ -35,8 +40,6 @@ socket.on("set id", function(msg){
 function GameManager(bgColor){
 	this.canvas = $("#canvas")[0];
 	this.ctx = canvas.getContext("2d");
-	this.camera = new Camera(0,0,0.25,this.canvas);
-	console.log(this.camera)
   //Resize the canvas to occupy the full page
   this.canvas.width  = window.innerWidth;
   this.canvas.height = window.innerHeight;
@@ -44,11 +47,12 @@ function GameManager(bgColor){
 	this.canvasWidth  = $("#canvas").width();
 	this.canvasHeight = $("#canvas").height();
   this.bgColor = bgColor;
+	this.camera = new Camera(0,0,0.25,this.canvas);
 
 	//create a container for the players
 	this.players = {};
 	this.playerID = -1;
-	this.currentPlayer = new GameObject(0,0,5,"circle", 25,"green", -1);
+	this.currentPlayer = new GameObject(0,0,5,"circle", 35,"green", -1);
  }
 
 
@@ -69,25 +73,24 @@ GameManager.prototype.Update = function(){
 
 	//move the camera to the player
 	if(this.players[this.playerID]){
-//		this.camera.CentreOn(this.players[this.playerID].x,												 this.players[this.playerID].y);
+		this.camera.CentreOn(this.players[this.playerID].position.x*this.camera.scale,
+										 	   this.players[this.playerID].position.y*this.camera.scale);
 	}else{
 		console.log("Failed to find playerID: " + this.playerID);
 		console.log("Players: " + Object.keys(this.players).length + " " + Object.keys(this.players)[0]);
 	}
 
 	//update the other players
-	var i = 2;
+	var i = 1;
 	for( var key in this.players){
 		this.players[key].Update(this.camera);
 	  this.ctx.fillText("px: " + 	this.players[key].position.x + " py: " + this.players[key].position.y,10,i*50);
-		i++
-		//console.log(this.players[key]);
+		i++;
 	}
 
 
 	this.ctx.font = "30px Arial";
-  this.ctx.fillText("x: " + this.camera.x + " y: " + this.camera.y,10,50);
-  this.ctx.fillText("berge: " + this.camera.y,10,150);
+  this.ctx.fillText("Players:" + Object.keys(this.players).length,350,50);
 
 };
 

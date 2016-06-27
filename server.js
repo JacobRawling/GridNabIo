@@ -8,6 +8,7 @@ var p2   = require('p2');              //the physics engine
 var world;
 
 var players = [];
+var sockets = {};
 var playerSeed = 0;
 
 
@@ -73,14 +74,12 @@ init = function(){
 }
 
 onSocketConnection = function(socket){
-	util.log("New player has connected:");
+	util.log("[INFO] New player has connected...");
 
-  initPlayer();
+  initPlayer(socket);
 
-  //this.broadcast.emit("new player", players[players.len-1].fullInfomation);
-
-  this.emit("set id", {id: playerSeed-1});
-  console.log("New player created");
+  //update all players about the new player
+  socket.broadcast.emit("new player", players[ playerSeed-1].fullInfomation);
 
   // Listen for client disconnected
 	socket.on("disconnect", onClientDisconnect);
@@ -94,13 +93,27 @@ onSocketConnection = function(socket){
 
 // Socket client has disconnected
 onClientDisconnect = function() {
-};
+  //need to keep track of who has disconnected and remove them from the server I gues
+  //so introduce heartbeats to player class.
 
-initPlayer = function(){
-  var newPlayer = new GameObject(0,0,5,"circle",35, "green",playerSeed);
+};
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
+}
+initPlayer = function(socket){
+  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),5,"circle",35, getRandomColor(),playerSeed);
   world.addBody(newPlayer.body);
   players.push(newPlayer);
-  playerSeed++;
+  util.log("[INFO] Created player object: " + playerSeed);
+  playerSeed = playerSeed+1;
+
+  //now tell the client about the ID + other players
+  socket.emit("set id", {id: playerSeed-1});
+  for(var i  = 0; i < players.length;i++){
+    if(players[i].fullInfomation.PlayerID != playerSeed-1){
+      socket.emit("new player", players[i].fullInfomation);
+    }
+  }
 }
 // New player has joined
 onNewPlayer = function(data) {
@@ -117,25 +130,58 @@ onMovePlayer = function(data){
 initPhysics = function(){
   // Create a physics world, where bodies and constraints live
   world = new p2.World({
-    gravity:[0, -9.82]
+    gravity:[0, 9.82]
   });
-
-  initPlayer();
 
   // Create an infinite ground plane.
   var groundBody = new p2.Body({
       mass: 0 ,// Setting mass to 0 makes the body static
-      position: [0, -200]
+      position: [0, 200],
+      angle: Math.PI
+  });
+
+  var ceillingBody = new p2.Body({
+      mass: 0 ,// Setting mass to 0 makes the body static
+      position: [0, -200],
+  });
+
+  var leftWall = new p2.Body({
+      mass: 0 ,// Setting mass to 0 makes the body static
+      position: [200, 0],
+      angle: Math.PI/2
+  });
+  var rightWall = new p2.Body({
+      mass: 0 ,// Setting mass to 0 makes the body static
+      position: [-200, 0],
+      angle: -Math.PI/2
   });
   var groundShape = new p2.Plane();
+  var leftWallShape = new p2.Plane();
+  var rightWallShape = new p2.Plane();
+  var ceillingShape = new p2.Plane();
   groundBody.addShape(groundShape);
+  leftWall.addShape(leftWallShape);
+  rightWall.addShape(rightWallShape);
+  ceillingBody.addShape(ceillingShape);
   world.addBody(groundBody);
+  world.addBody(leftWall);
+  world.addBody(rightWall);
+  world.addBody(ceillingBody);
   // To get the trajectories of the bodies,
   // we must step the world forward in time.
   // This is done using a fixed time step size.
   timeStep = 1 / 60; // seconds
   console.log("Initialized the physics engine.")
 };
+
+function getRandomColor() {
+    var letters = '0123456789ABCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
 
 getJSONWorld = function(){
     var JSONworld = []
@@ -151,7 +197,6 @@ getJSONWorld = function(){
 update = function(){
   // The step method moves the bodies forward in time.
   world.step(timeStep);
-
   //Convert world to JSON
   io.emit("update", getJSONWorld());
 }

@@ -12,10 +12,14 @@ function Camera(X,Y,scaleFactor,Canvas){
 
 }
 
-Camera.prototype.DrawCircle = function (x,y,r) {
+Camera.prototype.DrawCircle = function (x,y,r,color) {
+  var prevFill = this.ctx.fillStyle;
   this.ctx.beginPath();
-  this.ctx.arc(this.width/2+this.x+x*this.scale,this.height/2+this.y-y*this.scale,r*this.scale,0,2*Math.PI);
+  this.ctx.fillStyle = color;
+  this.ctx.arc(this.width/2+this.x+x*this.scale,this.height/2+this.y+y*this.scale,r*this.scale,0,2*Math.PI);
+  this.ctx.fill();
   this.ctx.stroke();
+  this.ctx.fillStyle =prevFill;
 };
 Camera.prototype.CentreOn = function (x,y) {
   this.x = x;
