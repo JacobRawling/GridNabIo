@@ -34,7 +34,19 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID){
       mass: mass,
       position: [posX, posY]
   });
+  this.target = {
+    x: 1,
+    y: 1
+  }
 
+  this.moveStrength = 15;
+  this.update = function(){
+    var len = Math.sqrt(this.target.x*this.target.x+this.target.y*this.target.y);
+
+    var moveLength = ( len == 0 ? 0.0 : this.moveStrength/len);
+    var dir = [moveLength*this.target.x,moveLength*this.target.y];
+    this.body.applyImpulseLocal(dir);
+  }
   this.body.applyDamping(0);
   this.CreateShape = function(shape,shapeInfo){
     switch(shape){
@@ -62,6 +74,7 @@ init = function(){
   app.get('/', function(req, res){
     res.sendFile(__dirname + '/public/index.html');
   });
+
 
   initPhysics();
 
@@ -123,12 +136,9 @@ onNewPlayer = function(data) {
 
 // Player has moved
 onMovePlayer = function(data){
-  var moveStrength = 4;
-  var len = Math.sqrt(data.x*data.x+data.y*data.y);
-
-  var dir = [moveStrength*data.x/len,moveStrength*data.y/len];
   if(players[data.id]){
-    players[data.id].body.applyImpulseLocal(dir);
+    players[data.id].target.x = data.x;
+    players[data.id].target.y = data.y;
   }
 };
 
@@ -202,8 +212,19 @@ getJSONWorld = function(){
 update = function(){
   // The step method moves the bodies forward in time.
   world.step(timeStep);
+
+  var JSONworld = []
+  for(var key in players ){
+    JSONworld.push(
+    {x: players[key].body.position[0],
+     y: players[key].body.position[1],
+    id: players[key].fullInfomation.PlayerID});
+
+    players[key].update();
+  }
+
   //Convert world to JSON
-  io.emit("update", getJSONWorld());
+  io.emit("update", JSONworld);
 }
 
 init();

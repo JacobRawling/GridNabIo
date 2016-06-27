@@ -41,6 +41,8 @@ socket.on("set id", function(msg){
 function GameManager(bgColor){
 	this.canvas = $("#canvas")[0];
 	this.ctx = canvas.getContext("2d");
+	this.mousePos = [];
+	this.moveDir = [0,0];
   //Resize the canvas to occupy the full page
   this.canvas.width  = window.innerWidth;
   this.canvas.height = window.innerHeight;
@@ -67,7 +69,11 @@ GameManager.prototype.PaintCanvas = function(){
   this.ctx.strokeStyle = "black";
   this.ctx.strokeRect(0, 0, this.canvasWidth, this.canvasWidth);
 };
-
+GameManager.prototype.SetMousePos = function(mousePos){
+	var xPosition =  mousePos[0] - 	gameManager.players[gameManager.playerID].position.x;
+	var yPosition =  mousePos[1] - 	gameManager.players[gameManager.playerID].position.y;
+	this.moveDir = [xPosition,yPosition];
+}
 GameManager.prototype.Update = function(){
 	//clear the
   //this.ctx.clearRect(0,0, this.canvas.width,this.canvas.height);
@@ -85,8 +91,6 @@ GameManager.prototype.Update = function(){
 	for( var key in this.players){
 		this.players[key].Update(this.camera);
 	}
-
-
 	this.ctx.font = "30px Arial";
   this.ctx.fillText("Players:" + Object.keys(this.players).length,350,50);
 
@@ -104,15 +108,15 @@ $(document).ready(function(){
 
 	//add onclick behaviour to the game
 	$("#canvas")[0].addEventListener('mousemove', function(event) {
-		var clickPos = gameManager.camera.ToWorldCoords(event.clientX,event.clientY);
-		var xPosition =  clickPos[0] - 	gameManager.players[gameManager.playerID].position.x;
-		var yPosition =  clickPos[1] - 	gameManager.players[gameManager.playerID].position.y;
+		var mousePos = gameManager.camera.ToWorldCoords(event.clientX,event.clientY);
+		gameManager.SetMousePos( mousePos );
 
 		socket.emit("move player",{
-			x: xPosition,
-			y: yPosition,
+			x: gameManager.moveDir[0],
+			y: gameManager.moveDir[1],
 			id: gameManager.playerID
 		});
+		console.log(gameManager.moveDir);
 
 	 }, false);
 
@@ -124,5 +128,5 @@ $(document).ready(function(){
 	}
 
   //every 60ms render the frame
- 	game_loop =setInterval(Update, 60);
+ 	game_loop =setInterval(Update, 30);
 });
