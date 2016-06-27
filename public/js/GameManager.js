@@ -21,7 +21,7 @@ socket.on("update", function(msg){
 
 //Server tells client there is a new player entered
 socket.on("new player", function(msg){
-	gameManager.players[msg.PlayerID] =  new GameObject(0,0,5,"circle", 35,"black", msg.playerID);
+	gameManager.players[msg.PlayerID] =  new GameObject(0,0,5,"circle", 60,"black", msg.playerID);
 	gameManager.players[msg.PlayerID].fullInfomation = msg;
 	gameManager.players[msg.PlayerID].SetPosition(msg.x,msg.y);
 
@@ -50,12 +50,12 @@ function GameManager(bgColor){
 	this.canvasWidth  = $("#canvas").width();
 	this.canvasHeight = $("#canvas").height();
   this.bgColor = bgColor;
-	this.camera = new Camera(0,0,0.25,this.canvas);
+	this.camera = new Camera(0,0,1.3,this.canvas);
 
 	//create a container for the players
 	this.players = {};
 	this.playerID = -1;
-	this.currentPlayer = new GameObject(0,0,5,"circle", 35,"green", -1);
+	this.currentPlayer = new GameObject(0,0,5,"circle", 75,"green", -1);
  }
 
 
@@ -110,10 +110,13 @@ $(document).ready(function(){
 	$("#canvas")[0].addEventListener('mousemove', function(event) {
 		var mousePos = gameManager.camera.ToWorldCoords(event.clientX,event.clientY);
 		gameManager.SetMousePos( mousePos );
+		var xDir = event.clientX - $("canvas")[0].width/2;
+		var yDir = event.clientY - $("canvas")[0].height/2;
+
 
 		socket.emit("move player",{
-			x: gameManager.moveDir[0],
-			y: gameManager.moveDir[1],
+			x: xDir,
+			y: yDir,
 			id: gameManager.playerID
 		});
 		console.log(gameManager.moveDir);

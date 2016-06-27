@@ -39,15 +39,15 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID){
     y: 1
   }
 
-  this.moveStrength = 15;
+  this.moveStrength = 2;
   this.update = function(){
     var len = Math.sqrt(this.target.x*this.target.x+this.target.y*this.target.y);
 
     var moveLength = ( len == 0 ? 0.0 : this.moveStrength/len);
     var dir = [moveLength*this.target.x,moveLength*this.target.y];
-    this.body.applyImpulseLocal(dir);
+
+    this.body.applyImpulse(dir);
   }
-  this.body.applyDamping(0);
   this.CreateShape = function(shape,shapeInfo){
     switch(shape){
       default:
@@ -115,7 +115,7 @@ function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
 initPlayer = function(socket){
-  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),5,"circle",35, getRandomColor(),playerSeed);
+  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),playerSeed);
   world.addBody(newPlayer.body);
   players[playerSeed]  = newPlayer;
   util.log("[INFO] Created player object: " + playerSeed);
@@ -147,7 +147,7 @@ initPhysics = function(){
   world = new p2.World({
     gravity:[0,0]
   });
-  var worldHalfSize = 500;
+  var worldHalfSize = 2500;
   // Create an infinite ground plane.
   var groundBody = new p2.Body({
       mass: 0 ,// Setting mass to 0 makes the body static
