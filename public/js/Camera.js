@@ -22,6 +22,6 @@ Camera.prototype.DrawCircle = function (x,y,r,color) {
   this.ctx.fillStyle =prevFill;
 };
 Camera.prototype.CentreOn = function (x,y) {
-  this.x = x;
+  this.x = -x;
   this.y = y;
 };

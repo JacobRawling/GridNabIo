@@ -21,11 +21,11 @@ socket.on("update", function(msg){
 
 //Server tells client there is a new player entered
 socket.on("new player", function(msg){
-	gameManager.players[msg.PlayerID] =  new GameObject(0,0,5,"circle", 35,"green", msg.playerID);
+	gameManager.players[msg.PlayerID] =  new GameObject(0,0,5,"circle", 35,"black", msg.playerID);
 	gameManager.players[msg.PlayerID].fullInfomation = msg;
 	gameManager.players[msg.PlayerID].SetPosition(msg.x,msg.y);
 
-	console.log(" New player info recieved col: " + msg.DisplayInfo ); 
+	console.log(" New player info recieved col: " + msg.DisplayInfo );
 //	console.log(	gameManager.players[msg.playerID].fullInfomation);
 //	console.log( gameManager.players )
 });
@@ -33,6 +33,7 @@ socket.on("new player", function(msg){
 socket.on("set id", function(msg){
 	console.log("Setting id: " +msg.id);
 	gameManager.currentPlayer.fullInfomation.PlayerID = msg.id;
+	gameManager.currentPlayer.fullInfomation.DisplayInfo = msg.DisplayInfo;
 	gameManager.playerID  = msg.id;
 	gameManager.players[gameManager.playerID] = gameManager.currentPlayer;
 });

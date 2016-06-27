@@ -108,7 +108,7 @@ initPlayer = function(socket){
   playerSeed = playerSeed+1;
 
   //now tell the client about the ID + other players
-  socket.emit("set id", {id: playerSeed-1});
+  socket.emit("set id", {id: playerSeed-1, DisplayInfo: newPlayer.fullInfomation.DisplayInfo});
   for(var i  = 0; i < players.length;i++){
     if(players[i].fullInfomation.PlayerID != playerSeed-1){
       socket.emit("new player", players[i].fullInfomation);
@@ -132,27 +132,27 @@ initPhysics = function(){
   world = new p2.World({
     gravity:[0, 9.82]
   });
-
+  var worldHalfSize = 500;
   // Create an infinite ground plane.
   var groundBody = new p2.Body({
       mass: 0 ,// Setting mass to 0 makes the body static
-      position: [0, 200],
+      position: [0, worldHalfSize],
       angle: Math.PI
   });
 
   var ceillingBody = new p2.Body({
       mass: 0 ,// Setting mass to 0 makes the body static
-      position: [0, -200],
+      position: [0, -worldHalfSize],
   });
 
   var leftWall = new p2.Body({
       mass: 0 ,// Setting mass to 0 makes the body static
-      position: [200, 0],
+      position: [worldHalfSize, 0],
       angle: Math.PI/2
   });
   var rightWall = new p2.Body({
       mass: 0 ,// Setting mass to 0 makes the body static
-      position: [-200, 0],
+      position: [-worldHalfSize, 0],
       angle: -Math.PI/2
   });
   var groundShape = new p2.Plane();
