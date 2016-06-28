@@ -104,7 +104,7 @@ onSocketConnection = function(socket){
   initPlayer(socket);
 
   //update all players about the new player
-  socket.broadcast.emit("new player", players[ playerSeed-1].fullInfomation);
+  socket.broadcast.emit("new player", players[ socket.id ].fullInfomation);
 
   // Listen for client disconnected
 	socket.on("disconnect", onClientDisconnect);
@@ -120,25 +120,25 @@ onSocketConnection = function(socket){
 }
 
 // Socket client has disconnected
-onClientDisconnect = function() {
-  //need to keep track of who has disconnected and remove them from the server I gues
-  //so introduce heartbeats to player class.
-
+onClientDisconnect = function(socket) {
+	if(players[this.id]){
+    world.removeBody(players[this.id].body);
+		delete players[this.id];
+  }
+  io.emit("player disconnected", {id: this.id});
 };
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
 initPlayer = function(socket){
-  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),playerSeed, "player");
+  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),socket.id, "player");
   world.addBody(newPlayer.body);
-  players[playerSeed]  = newPlayer;
-  util.log("[INFO] Created player object: " + playerSeed);
-  playerSeed = playerSeed+1;
-
+  players[socket.id]  = newPlayer;
+  
   //now tell the client about the ID + other players
-  socket.emit("set id", {id: playerSeed-1, DisplayInfo: newPlayer.fullInfomation.DisplayInfo});
+  socket.emit("set id", {id: socket.id, DisplayInfo: newPlayer.fullInfomation.DisplayInfo});
   for(var key in players){
-    if(key != playerSeed-1){
+    if(key != socket.id){
       socket.emit("new player", players[key].fullInfomation);
     }
   }

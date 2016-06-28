@@ -59,6 +59,11 @@ socket.on("bullet fired", function(msg){
 	gameManager.bullets[msg.PlayerID].SetPosition(msg.x,msg.y);
 });
 
+//Server tells client there is another player has disconnected
+socket.on("player disconnected", function(msg){
+	if(gameManager.players[msg.id])
+		delete gameManager.players[msg.id];
+});
 function GameManager(bgColor){
 	this.canvas = $("#canvas")[0];
 	this.ctx = canvas.getContext("2d");
@@ -71,7 +76,7 @@ function GameManager(bgColor){
 	this.canvasWidth  = $("#canvas").width();
 	this.canvasHeight = $("#canvas").height();
   this.bgColor = bgColor;
-	this.camera = new Camera(0,0,1.3,this.canvas);
+	this.camera = new Camera(0,0,0.3,this.canvas);
 
 	//create a container for the players
 	this.players = {};
