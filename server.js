@@ -96,6 +96,8 @@ init = function(){
   http.listen(3000, function(){
     console.log('listening on *:3000');
   });
+
+
 }
 
 onSocketConnection = function(socket){
@@ -134,7 +136,7 @@ initPlayer = function(socket){
   var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),socket.id, "player");
   world.addBody(newPlayer.body);
   players[socket.id]  = newPlayer;
-  
+
   //now tell the client about the ID + other players
   socket.emit("set id", {id: socket.id, DisplayInfo: newPlayer.fullInfomation.DisplayInfo});
   for(var key in players){
@@ -200,6 +202,24 @@ initPhysics = function(){
   // we must step the world forward in time.
   // This is done using a fixed time step size.
   timeStep = 1 / 60; // seconds
+
+  //create collision handlers
+  world.on("impact",function(evt){
+    var bodyA = evt.bodyA,
+        bodyB = evt.bodyB;
+      util.log("[INFO] Collision Detected");
+    //if(!hideShip && allowShipCollision && (bodyA.id == shipBody.id || bodyB.id == shipBody.id)){
+
+  /*
+      var s = bodyA.shapes[0].collisionGroup == SHIP ? bodyA : bodyB,
+          otherBody = bodyB==s ? bodyA : bodyB;
+
+      if(otherBody.shapes[0].collisionGroup == ASTEROID){
+
+      }
+  */
+
+  });
   console.log("Initialized the physics engine.")
 };
 
@@ -254,6 +274,8 @@ function shootBullet( data ){
     io.emit("bullet fired", newBullet.fullInfomation);
   }
 }
+
+
 update = function(){
   // The step method moves the bodies forward in time.
   world.step(timeStep);

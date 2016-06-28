@@ -1,7 +1,6 @@
 # GridNabIo
 
 TODO:
-  - Handle d/c
   - Add ability for ships to get destroyed
   - Add points for players
   - Add player side sprite display - i.e I have sprite classes from previous projets
@@ -10,3 +9,4 @@ TODO:
   - Add chat window
   - Add client side physics engine
   - Design game a bit more
+  - Add AI ships to server 
