@@ -12,9 +12,17 @@ var gameManager = 0;
 socket.on("update", function(msg){
 	physicsWorld = msg;
 	for( var  i = 0 ; i < msg.length; i++){
-		if(gameManager.players[msg[i].id]){
-			gameManager.players[msg[i].id].position.x = msg[i].x;
-			gameManager.players[msg[i].id].position.y = msg[i].y;
+		if(msg[i].type == "player"){
+			if(gameManager.players[msg[i].id]){
+				gameManager.players[msg[i].id].position.x = msg[i].x;
+				gameManager.players[msg[i].id].position.y = msg[i].y;
+			}
+		}
+		if(msg[i].type == "bullet"){
+			if(gameManager.bullets[msg[i].id]){
+				gameManager.bullets[msg[i].id].position.x = msg[i].x;
+				gameManager.bullets[msg[i].id].position.y = msg[i].y;
+			}
 		}
 	}
 });
@@ -38,6 +46,19 @@ socket.on("set id", function(msg){
 	gameManager.players[gameManager.playerID] = gameManager.currentPlayer;
 });
 
+
+socket.on("bullet fired", function(msg){
+	console.log("[INFO] Bullet shot");
+		console.log(msg);
+	gameManager.bullets[msg.PlayerID] =  new GameObject(
+		msg.x,msg.y,
+		0,"circle",10,
+		msg.DisplayInfo,
+		msg.PlayerID, "bullet");
+	gameManager.bullets[msg.PlayerID].fullInfomation = msg;
+	gameManager.bullets[msg.PlayerID].SetPosition(msg.x,msg.y);
+});
+
 function GameManager(bgColor){
 	this.canvas = $("#canvas")[0];
 	this.ctx = canvas.getContext("2d");
@@ -54,6 +75,7 @@ function GameManager(bgColor){
 
 	//create a container for the players
 	this.players = {};
+	this.bullets = {};
 	this.playerID = -1;
 	this.currentPlayer = new GameObject(0,0,5,"circle", 75,"green", -1);
  }
@@ -91,6 +113,9 @@ GameManager.prototype.Update = function(){
 	for( var key in this.players){
 		this.players[key].Update(this.camera);
 	}
+	for( var key in this.bullets){
+		this.bullets[key].Update(this.camera);
+	}
 	this.ctx.font = "30px Arial";
   this.ctx.fillText("Players:" + Object.keys(this.players).length,350,50);
 
@@ -119,12 +144,11 @@ $(document).ready(function(){
 			y: yDir,
 			id: gameManager.playerID
 		});
-		console.log(gameManager.moveDir);
 
 	 }, false);
 
  	$("#canvas")[0].addEventListener('click', function(event) {
-//		gameManager.camera.scale += 0.05;
+		socket.emit("shoot",{			id: gameManager.playerID		});
  	});
 	function Update(){
 	 gameManager.Update();

@@ -9,10 +9,12 @@ var world;
 
 var players = {};
 var sockets = {};
+var bullets = {};
 var playerSeed = 0;
+var bulletSeed = 0;
 
 
-function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID){
+function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type){
   //When updating clients about GameObjects the creation of this Object
   // Full infomation will be sent
   this.fullInfomation = {
@@ -22,18 +24,27 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID){
     Shape: shape,
     ShapeInfo: shapeInfo,
     DisplayInfo: displayInfo,
-    PlayerID: playerID
+    PlayerID: playerID,
+    LastShot: 0,
+    Type: type
   }
   // When sending a
   this.position = {
-    x: 0,
-    y: 0
+    x: posX,
+    y: posY
   }
-
   this.body = new p2.Body({
       mass: mass,
       position: [posX, posY]
   });
+
+  if(this.fullInfomation.Type === "bullet"){
+    this.body = new p2.Body({
+        mass: mass,
+        position: [posX, posY],
+        collisionResponse: false
+    });
+  }
   this.target = {
     x: 1,
     y: 1
@@ -103,6 +114,9 @@ onSocketConnection = function(socket){
 
 	// Listen for move player message
 	socket.on("move player", onMovePlayer);
+
+  // Listen for shoot message
+	socket.on("shoot", shootBullet);
 }
 
 // Socket client has disconnected
@@ -115,7 +129,7 @@ function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
 initPlayer = function(socket){
-  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),playerSeed);
+  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),playerSeed, "player");
   world.addBody(newPlayer.body);
   players[playerSeed]  = newPlayer;
   util.log("[INFO] Created player object: " + playerSeed);
@@ -209,18 +223,36 @@ getJSONWorld = function(){
     return JSONworld;
 };
 
-function shootBullet( position,direction, playerID ){
-  //keep track of players with shoot timer
-  //keep track of bullets shot + ids + colors
-  //update output world to include bullet locations
+function shootBullet( data ){
+  playerID = data.id;
 
-  var shape = new p2.Circle({ radius: 10 });
-  var body = new p2.Body({
-      mass: mass,
-      position: [position.x, position.y]
-  });
-  body.addShape(shape);
-  world.addBody(body);
+  //can shoot once per second
+  if(players[playerID] &&
+  (new Date().getTime() - players[playerID].fullInfomation.LastShot > 1000)){
+    //create the gameobject to store the body and add it to the physics engine
+    var newBullet = new GameObject(
+      players[playerID].body.position[0],
+      players[playerID].body.position[1],
+      0,"circle",10,
+      players[playerID].fullInfomation.DisplayInfo,
+      bulletSeed, "bullet");
+    world.addBody(newBullet.body);
+    bullets[bulletSeed] = newBullet;
+
+    //shoot in the direction the player is aiming
+    var shootSpeed = 55;
+    var len = Math.sqrt(players[playerID].target.x*players[playerID].target.x+players[playerID].target.y*players[playerID].target.y);
+    var velLength = ( len == 0 ? 0.0 : shootSpeed/len);
+    newBullet.body.velocity[0] = velLength*players[playerID].target.x;
+    newBullet.body.velocity[1] = velLength*players[playerID].target.y;
+
+    //keep track of the bullets fired and who fired what
+    bulletSeed++;
+    players[playerID].fullInfomation.LastShot = new Date().getTime();
+
+    //update all players about a bullet being fired
+    io.emit("bullet fired", newBullet.fullInfomation);
+  }
 }
 update = function(){
   // The step method moves the bodies forward in time.
@@ -231,11 +263,18 @@ update = function(){
     JSONworld.push(
     {x: players[key].body.position[0],
      y: players[key].body.position[1],
-    id: players[key].fullInfomation.PlayerID});
+    id: players[key].fullInfomation.PlayerID,
+    type: "player"} );
 
     players[key].update();
   }
-
+  for(var id in bullets){
+    JSONworld.push(
+    {x: bullets[id].body.position[0],
+     y: bullets[id].body.position[1],
+    id: bullets[id].fullInfomation.PlayerID,
+    type: "bullet"} );
+  }
   //Convert world to JSON
   io.emit("update", JSONworld);
 }

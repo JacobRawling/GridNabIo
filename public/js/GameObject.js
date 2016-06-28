@@ -1,6 +1,6 @@
 /*
  */
- function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo, playerID){
+ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo, playerID,type){
    //When updating clients about GameObjects the creation of this Object
    // Full infomation will be sent
    this.fullInfomation = {
@@ -10,7 +10,9 @@
      Shape: shape,
      ShapeInfo: shapeInfo,
      DisplayInfo: displayInfo,
-     PlayerID: playerID
+     PlayerID: playerID,
+     LastShot: 0,
+     Type: type
    }
    // When sending a
    this.position = {
