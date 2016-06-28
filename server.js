@@ -13,7 +13,38 @@ var bullets = {};
 var playerSeed = 0;
 var bulletSeed = 0;
 
+var PLAYER = Math.pow(2,1);
+var BULLET = Math.pow(2,2);
+var GROUND = Math.pow(2,0);
 
+function GetCollisionGroup(type){
+  switch(type){
+    case "bullet":
+      return BULLET;
+      break;
+    case "player":
+      return PLAYER;
+      break;
+    default:
+    case "ground":
+      return GROUND;
+      break;
+  }
+}
+function GetCollisionMask(type){
+  switch(type){
+    case "bullet":
+      return PLAYER | BULLET;
+      break;
+    case "player":
+      return PLAYER | GROUND | BULLET;
+      break;
+    default:
+    case "ground":
+      return GROUND | PLAYER;
+      break;
+  }
+}
 function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type){
   //When updating clients about GameObjects the creation of this Object
   // Full infomation will be sent
@@ -35,16 +66,10 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type){
   }
   this.body = new p2.Body({
       mass: mass,
-      position: [posX, posY]
+      position: [posX, posY],
+      id: playerID
   });
 
-  if(this.fullInfomation.Type === "bullet"){
-    this.body = new p2.Body({
-        mass: mass,
-        position: [posX, posY],
-        collisionResponse: false
-    });
-  }
   this.target = {
     x: 1,
     y: 1
@@ -63,7 +88,12 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type){
     switch(shape){
       default:
       case "circle":
-         var shape = new p2.Circle({ radius: shapeInfo });
+         var shape = new p2.Circle({ radius: shapeInfo  });
+         shape.collisionGroup = GetCollisionGroup(type);
+         shape.collisionMask = GetCollisionMask(type);
+         if(type === "bullet"){
+           shape.sensor = true;
+         }
          this.body.addShape(shape);
          break;
      case "plane":
@@ -187,13 +217,23 @@ initPhysics = function(){
       angle: -Math.PI/2
   });
   var groundShape = new p2.Plane();
+  groundShape.collisionGroup = GROUND;
+  groundShape.collisionMask = GROUND | PLAYER;
   var leftWallShape = new p2.Plane();
+  leftWallShape.collisionGroup = GROUND;
+  leftWallShape.collisionMask = GROUND | PLAYER;
   var rightWallShape = new p2.Plane();
+  rightWallShape.collisionGroup = GROUND;
+  rightWallShape.collisionMask = GROUND| PLAYER;
   var ceillingShape = new p2.Plane();
+  ceillingShape.collisionGroup = GROUND;
+  ceillingShape.collisionMask = GROUND | PLAYER;
+
   groundBody.addShape(groundShape);
   leftWall.addShape(leftWallShape);
   rightWall.addShape(rightWallShape);
   ceillingBody.addShape(ceillingShape);
+
   world.addBody(groundBody);
   world.addBody(leftWall);
   world.addBody(rightWall);
@@ -204,20 +244,23 @@ initPhysics = function(){
   timeStep = 1 / 60; // seconds
 
   //create collision handlers
-  world.on("impact",function(evt){
+  world.on("beginContact",function(evt){
     var bodyA = evt.bodyA,
         bodyB = evt.bodyB;
-      util.log("[INFO] Collision Detected");
-    //if(!hideShip && allowShipCollision && (bodyA.id == shipBody.id || bodyB.id == shipBody.id)){
+    if( bodyA.shapes[0].collisionGroup == BULLET || bodyB.shapes[0].collisionGroup == BULLET ){
+        util.log("[INFO] Collision Detected with BULLET: ");
+    }
+    if( bodyA.shapes[0].collisionGroup == PLAYER || bodyB.shapes[0].collisionGroup == PLAYER ){
 
-  /*
-      var s = bodyA.shapes[0].collisionGroup == SHIP ? bodyA : bodyB,
-          otherBody = bodyB==s ? bodyA : bodyB;
-
+      var playerBody = bodyA.shapes[0].collisionGroup == PLAYER ? bodyA : bodyB,
+          otherBody  = bodyB==playerBody ? bodyA : bodyB;
+      util.log("[INFO] Collision Detected with player: "+ playerBody.id + " and other object " + otherBody.id);
+/*
       if(otherBody.shapes[0].collisionGroup == ASTEROID){
 
       }
   */
+    }
 
   });
   console.log("Initialized the physics engine.")
