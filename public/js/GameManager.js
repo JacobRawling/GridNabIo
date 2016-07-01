@@ -97,9 +97,11 @@ GameManager.prototype.PaintCanvas = function(){
   this.ctx.strokeRect(0, 0, this.canvasWidth, this.canvasWidth);
 };
 GameManager.prototype.SetMousePos = function(mousePos){
-	var xPosition =  mousePos[0] - 	gameManager.players[gameManager.playerID].position.x;
-	var yPosition =  mousePos[1] - 	gameManager.players[gameManager.playerID].position.y;
-	this.moveDir = [xPosition,yPosition];
+	if(	gameManager.players[gameManager.playerID] ){
+		var xPosition =  mousePos[0] - 	gameManager.players[gameManager.playerID].position.x;
+		var yPosition =  mousePos[1] - 	gameManager.players[gameManager.playerID].position.y;
+		this.moveDir = [xPosition,yPosition];
+	}
 }
 GameManager.prototype.Update = function(){
 	//clear the
@@ -109,9 +111,6 @@ GameManager.prototype.Update = function(){
 	if(this.players[this.playerID]){
 		this.camera.CentreOn(this.players[this.playerID].position.x,
 										 	   this.players[this.playerID].position.y);
-	}else{
-		console.log("Failed to find playerID: " + this.playerID);
-		console.log("Players: " + Object.keys(this.players).length + " " + Object.keys(this.players)[0]);
 	}
 
 	//update the other players
@@ -126,6 +125,12 @@ GameManager.prototype.Update = function(){
 
 };
 
+GameManager.prototype.StartGame = function(){
+	var playerName = $('#nameBox').val();
+	console.log(playerName);
+	$('#connectBox').hide();
+	socket.emit("start play", {name: playerName});
+};
 GameManager.prototype.KeyPress = function(key){
 /*	for( i = 0; i < this.players.length; i++){
 		this.players[i].ManageMovement(key);

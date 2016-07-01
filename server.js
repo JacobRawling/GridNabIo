@@ -133,10 +133,8 @@ init = function(){
 onSocketConnection = function(socket){
 	util.log("[INFO] New player has connected...");
 
-  initPlayer(socket);
 
-  //update all players about the new player
-  socket.broadcast.emit("new player", players[ socket.id ].fullInfomation);
+  socket.on("start play", onStartPlay);
 
   // Listen for client disconnected
 	socket.on("disconnect", onClientDisconnect);
@@ -151,6 +149,13 @@ onSocketConnection = function(socket){
 	socket.on("shoot", shootBullet);
 }
 
+//
+onStartPlay = function(data){
+
+  initPlayer(this, data.name);
+  //update all players about the new player
+  this.broadcast.emit("new player", players[ this.id ].fullInfomation);
+}
 // Socket client has disconnected
 onClientDisconnect = function(socket) {
 	if(players[this.id]){
@@ -162,8 +167,11 @@ onClientDisconnect = function(socket) {
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
-initPlayer = function(socket){
-  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75, getRandomColor(),socket.id, "player");
+initPlayer = function(socket, data){
+  var newPlayer = new GameObject(getRandomArbitrary(-10,10),getRandomArbitrary(0,250),30,"circle",75,
+                              {color: getRandomColor(),
+                               name: data.name},
+                               socket.id, "player");
   world.addBody(newPlayer.body);
   players[socket.id]  = newPlayer;
 
@@ -247,25 +255,32 @@ initPhysics = function(){
   world.on("beginContact",function(evt){
     var bodyA = evt.bodyA,
         bodyB = evt.bodyB;
-    if( bodyA.shapes[0].collisionGroup == BULLET || bodyB.shapes[0].collisionGroup == BULLET ){
-        util.log("[INFO] Collision Detected with BULLET: ");
-    }
-    if( bodyA.shapes[0].collisionGroup == PLAYER || bodyB.shapes[0].collisionGroup == PLAYER ){
+
+    //Check to see if a player has collided with something
+    if( (bodyA.shapes[0].collisionGroup == PLAYER || bodyB.shapes[0].collisionGroup == PLAYER ) ){
 
       var playerBody = bodyA.shapes[0].collisionGroup == PLAYER ? bodyA : bodyB,
-          otherBody  = bodyB==playerBody ? bodyA : bodyB;
-      util.log("[INFO] Collision Detected with player: "+ playerBody.id + " and other object " + otherBody.id);
-/*
-      if(otherBody.shapes[0].collisionGroup == ASTEROID){
+          otherBody = bodyB==playerBody ? bodyA : bodyB;
 
-      }
-  */
+      if( otherBody.shapes[0].collisionGroup == BULLET )
+        HandlePlayerBulletCollison(playerBody,otherBody);
+      if( otherBody.shapes[0].collisionGroup == PLAYER )
+        HandlePlayerPlayerCollison(playerBody,otherBody);
     }
+
+
 
   });
   console.log("Initialized the physics engine.")
 };
 
+function HandlePlayerBulletCollison(playerBody,bulletBody){
+  util.log("Player " + playerBody.id + " hit with a bullet.");
+}
+
+function HandlePlayerPlayerCollison(player1Body,player2Body){
+  util.log("Player " + player1Body.id + " hit player " + player2Body.id);
+}
 function getRandomColor() {
     var letters = '0123456789ABCDEF'.split('');
     var color = '#';

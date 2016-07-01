@@ -31,7 +31,7 @@ GameObject.prototype.Update = function(camera){
   switch(that.Shape){
     default:
     case "circle":
-      camera.DrawCircle(that.position.x, that.position.y,that.fullInfomation.ShapeInfo,that.fullInfomation.DisplayInfo);
+      camera.DrawCircle(that.position.x, that.position.y,that.fullInfomation.ShapeInfo,that.fullInfomation.DisplayInfo.color,that.fullInfomation.DisplayInfo.name);
       break;
   }
 }
