@@ -30,5 +30,63 @@ p { position:absolute; left:0; right:0; text-align:center; margin:0; padding:0.5
   margin: 0 auto;
 }
 input[type="text"]{
-    font-size:24px;
+    font-size:20px;
+    margin: 0 auto;
+}
+#leaderBoard{
+  position:absolute; width: 15%; height:25%;   background-color:#000000 ; z-index: 500;
+  top: 8px;
+  right: 16px;  margin: auto;
+  border-radius: 25px;
+  border: 2px solid #000000;
+  padding: 20px;
+}
+#leaderBoardEntry{
+  position:absolute; z-index: 500;
+  top: 8px;
+  right: 16px;  margin: auto;
+  border-radius: 25px;
+  border: 2px solid #000000;
+  padding: 20px;
+}
+#chatBox{
+  position:absolute; width: 15%; height:25%;   background-color:#000000 ; z-index: 500;
+  bottom: 8px;
+  left: 16px;  margin: auto;
+  border-radius: 25px;
+  border: 2px solid #000000;
+  padding: 20px;
+}
+.transparent
+{
+  opacity:.50;
+  -moz-opacity:.50;
+  filter:alpha(opacity=50);
+}
+
+#leaderBoard {
+    position: absolute;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    color: #FFF;
+    font-size: 16.1px;
+    top: 10px;
+    right: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+#leaderBoard .title {
+    font-size: 25px;
+    color:#000000;
+}
+
+#leaderBoard .me {
+    color: #000000;
+    font-size: 16.1px; margin: auto;
+    border-radius: 10px;
+    border: 2px solid #000000;
+    padding: 3px;
+    background-color: #FFFFFF;
+    width: 90%;
 }

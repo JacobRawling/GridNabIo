@@ -1,0 +1,29 @@
+{
+  "name": "Circles!",
+  "version": "0.0.1",
+  "description": "A s",
+  "engines": {
+    "node": "5.9.1"
+  },
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ejs": "2.4.1",
+    "express": "4.13.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JacobRawling/GridNabIo"
+  },
+  "keywords": [
+    "node",
+    "heroku",
+    "express",
+    "socket.io",
+    "util",
+    "p2"
+  ],
+  "license": "MIT"
+}

@@ -5,10 +5,35 @@
  * Date: 06/2016
  * Email: Rawling.Jacob@gmail.com
  */
+
 //GameManager class
 var socket = io();
 var gameManager = 0;
+socket.on("increase score", function(msg){
+	if(gameManager.players[msg.id]){
+		gameManager.players[msg.id].fullInfomation.score += msg.amount;
+		if(msg.id == gameManager.currentPlayer.fullInfomation.PlayerID)
+			gameManager.camera.ZoomOut(-0.05);
+	}
+});
 
+socket.on("scoreboard",function(msg){
+		console.log("Setting leaderboard");
+		console.log(msg);
+		var status = '';
+		for( var i = 0; i <  msg.length; i++){
+		//	if(msg[msg.length-i-1].score > 0)
+				status += '<div class="me">' + msg[msg.length-i-1].name + ': ' +msg[msg.length-i-1].score + '</div>';
+			//else break;
+		}
+		console.log(msg.length);
+		console.log(status);
+    document.getElementById('leaderBoard').innerHTML = status;
+});
+socket.on("remove bullet", function(msg){
+	if(gameManager.bullets[msg.id])
+		delete gameManager.bullets[msg.id];
+});
 socket.on("update", function(msg){
 	physicsWorld = msg;
 	for( var  i = 0 ; i < msg.length; i++){
@@ -32,14 +57,10 @@ socket.on("new player", function(msg){
 	gameManager.players[msg.PlayerID] =  new GameObject(0,0,5,"circle", 60,"black", msg.playerID);
 	gameManager.players[msg.PlayerID].fullInfomation = msg;
 	gameManager.players[msg.PlayerID].SetPosition(msg.x,msg.y);
-
-	console.log(" New player info recieved col: " + msg.DisplayInfo );
-//	console.log(	gameManager.players[msg.playerID].fullInfomation);
-//	console.log( gameManager.players )
 });
 
+
 socket.on("set id", function(msg){
-	console.log("Setting id: " +msg.id);
 	gameManager.currentPlayer.fullInfomation.PlayerID = msg.id;
 	gameManager.currentPlayer.fullInfomation.DisplayInfo = msg.DisplayInfo;
 	gameManager.playerID  = msg.id;
@@ -48,19 +69,22 @@ socket.on("set id", function(msg){
 
 
 socket.on("bullet fired", function(msg){
-	console.log("[INFO] Bullet shot");
-		console.log(msg);
-	gameManager.bullets[msg.PlayerID] =  new GameObject(
+
+	gameManager.bullets[msg.id] =  new GameObject(
 		msg.x,msg.y,
 		0,"circle",10,
 		msg.DisplayInfo,
-		msg.PlayerID, "bullet");
-	gameManager.bullets[msg.PlayerID].fullInfomation = msg;
-	gameManager.bullets[msg.PlayerID].SetPosition(msg.x,msg.y);
+		msg.id, "bullet");
+
+	gameManager.bullets[msg.id].fullInfomation = msg;
+	gameManager.bullets[msg.id].SetPosition(msg.x,msg.y);
 });
 
 //Server tells client there is another player has disconnected
 socket.on("player disconnected", function(msg){
+	if(gameManager.playerID == msg.id)
+		gameManager.Die();
+	else
 	if(gameManager.players[msg.id])
 		delete gameManager.players[msg.id];
 });
@@ -76,7 +100,7 @@ function GameManager(bgColor){
 	this.canvasWidth  = $("#canvas").width();
 	this.canvasHeight = $("#canvas").height();
   this.bgColor = bgColor;
-	this.camera = new Camera(0,0,0.3,this.canvas);
+	this.camera = new Camera(0,0,0.7,this.canvas);
 
 	//create a container for the players
 	this.players = {};
@@ -105,7 +129,6 @@ GameManager.prototype.SetMousePos = function(mousePos){
 }
 GameManager.prototype.Update = function(){
 	//clear the
-  //this.ctx.clearRect(0,0, this.canvas.width,this.canvas.height);
 	this.camera.DrawBackground();
 	//move the camera to the player
 	if(this.players[this.playerID]){
@@ -120,21 +143,29 @@ GameManager.prototype.Update = function(){
 	for( var key in this.bullets){
 		this.bullets[key].Update(this.camera);
 	}
-	this.ctx.font = "30px Arial";
-  this.ctx.fillText("Players:" + Object.keys(this.players).length,350,50);
-
+	if(this.players[this.playerID]){
+		this.ctx.font = "30px Arial";
+	  this.ctx.fillText(this.players[this.playerID].fullInfomation.score,0,30);
+	}
 };
 
 GameManager.prototype.StartGame = function(){
+	$("#leaderBoard").show();
 	var playerName = $('#nameBox').val();
-	console.log(playerName);
 	$('#connectBox').hide();
 	socket.emit("start play", {name: playerName});
 };
+GameManager.prototype.Die = function(){
+	$('#connectBox').show();
+	this.players[this.playerID].fullInfomation.score = 0;
+	players[playerID].fullInfomation.score = 0;
+	delete players[playerID];
+	playerID = -1;
+
+	socket.emit("start play", {name: playerName});
+}
 GameManager.prototype.KeyPress = function(key){
-/*	for( i = 0; i < this.players.length; i++){
-		this.players[i].ManageMovement(key);
-	}*/
+
 };
 
 $(document).ready(function(){
@@ -156,7 +187,7 @@ $(document).ready(function(){
 		});
 
 	 }, false);
-
+	$("#leaderBoard").hide();
  	$("#canvas")[0].addEventListener('click', function(event) {
 		socket.emit("shoot",{			id: gameManager.playerID		});
  	});

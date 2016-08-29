@@ -11,7 +11,7 @@ TODO:
     <head>
       <title>GridGrab.io</title>
       <link rel="stylesheet" href="css/stylesheet.css" />
-      <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
+      <script src="js/jquery.min.js" type="text/javascript"></script>
       <script src="js/Player.js" type="text/javascript"></script>
       <script src="js/GameObject.js" type="text/javascript"></script>
       <script src="/socket.io/socket.io.js"></script>
@@ -26,8 +26,7 @@ TODO:
 
         <div class="centerDiv" id="connectBox">
           <form >
-            <div style="margin: 0 auto; width: 70%;">
-              asdfasdf
+            <div style="margin: 0 auto; width: 90%;">
             <input class="textBox" class="input" id="nameBox" type="text" name="name" value="" placeholder="your name here.."
             onkeydown = "if (event.keyCode == 13){
                         event.preventDefault();
@@ -40,6 +39,7 @@ TODO:
             </div>
         </form>
        </div>
+       <div class="transparent" id="leaderBoard">       </div>
 
        <canvas id="canvas"></canvas>
     </body>

@@ -8,9 +8,20 @@ function Camera(X,Y,scaleFactor,Canvas){
 
   this.width = this.canvas.width;
   this.height = this.canvas.height;
-
+  this.maxScale = 0.8;
+  this.maxScale = 0.25;
   this.scale = scaleFactor;
+}
 
+Camera.prototype.ZoomOut = function(amount){
+  if(amount < 0){
+    if(this.scale  >  this.minScale)
+      this.scale += amount;
+  }else {
+     if(this.scale  <  this.maxScale)
+      this.scale += amount;
+
+  }
 }
 
 Camera.prototype.DrawBackground = function(){
