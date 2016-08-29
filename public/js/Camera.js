@@ -51,6 +51,22 @@ Camera.prototype.DrawCircle = function (x,y,r,color,name) {
 
   this.ctx.fillStyle =prevFill;
 };
+Camera.prototype.DrawRect = function (x,y,shapeInfo,angle,color,name) {
+  this.ctx.save();
+  var prevFill = this.ctx.fillStyle;
+  var w = shapeInfo.width, h = shapeInfo.height;
+
+  this.ctx.beginPath();
+  this.ctx.fillStyle = color;
+
+  this.ctx.translate( this.width/2+this.x+x*this.scale,this.height/2+this.y+y*this.scale);
+  this.ctx.rotate( angle );
+//  this.ctx.translate( 0, h*this.scale );
+  this.ctx.rect(0,0,    w*this.scale,h*this.scale);
+  this.ctx.fill();
+  this.ctx.stroke();
+  this.ctx.restore();
+};
 Camera.prototype.CentreOn = function (x,y) {
   this.x = -x*this.scale;
   this.y = -y*this.scale;

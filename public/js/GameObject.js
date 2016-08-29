@@ -20,6 +20,7 @@
      x: posX,
      y: posY
    }
+   this.angle= 0;
 
 
 
@@ -33,15 +34,21 @@ GameObject.prototype.SetPosition = function(X,Y){
 };
 GameObject.prototype.Update = function(camera){
   var that = this;
-  switch(that.Shape){
+
+  switch(that.fullInfomation.Shape){
     default:
     case "circle":
-    
       camera.DrawCircle(that.position.x, that.position.y,
         that.fullInfomation.ShapeInfo,
         that.fullInfomation.DisplayInfo.color,
         ( that.fullInfomation.type == "bullet" ? "" : that.fullInfomation.DisplayInfo.name));
       break;
+    case "rectangle":
+        camera.DrawRect(that.position.x, that.position.y,
+          that.fullInfomation.ShapeInfo,this.angle,
+          that.fullInfomation.DisplayInfo.color,
+          ( that.fullInfomation.type == "bullet" ? "" : that.fullInfomation.DisplayInfo.name));
+        break;
   }
 }
 GameObject.prototype.IsDead = function(){

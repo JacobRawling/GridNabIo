@@ -9,6 +9,7 @@
 //GameManager class
 var socket = io();
 var gameManager = 0;
+
 socket.on("increase score", function(msg){
 	if(gameManager.players[msg.id]){
 		gameManager.players[msg.id].fullInfomation.score += msg.amount;
@@ -33,6 +34,10 @@ socket.on("scoreboard",function(msg){
 socket.on("remove bullet", function(msg){
 	if(gameManager.bullets[msg.id])
 		delete gameManager.bullets[msg.id];
+});
+socket.on("remove food", function(msg){
+	if(gameManager.foods[msg.id])
+		delete gameManager.foods[msg.id];
 });
 socket.on("update", function(msg){
 	physicsWorld = msg;
@@ -80,6 +85,18 @@ socket.on("bullet fired", function(msg){
 	gameManager.bullets[msg.id].SetPosition(msg.x,msg.y);
 });
 
+socket.on("food spawned", function(msg){
+	gameManager.foods[msg.id] =  new GameObject(
+		msg.x,msg.y,
+		0,"circle",5,
+		msg.DisplayInfo,
+		msg.id, "food");
+
+	gameManager.foods[msg.id].fullInfomation = msg;
+	gameManager.foods[msg.id].SetPosition(msg.x,msg.y);
+});
+
+
 //Server tells client there is another player has disconnected
 socket.on("player disconnected", function(msg){
 	if(gameManager.playerID == msg.id)
@@ -105,6 +122,7 @@ function GameManager(bgColor){
 	//create a container for the players
 	this.players = {};
 	this.bullets = {};
+	this.foods = {};
 	this.playerID = -1;
 	this.currentPlayer = new GameObject(0,0,5,"circle", 75,"green", -1);
  }
@@ -142,6 +160,9 @@ GameManager.prototype.Update = function(){
 	}
 	for( var key in this.bullets){
 		this.bullets[key].Update(this.camera);
+	}
+	for( var key in this.foods){
+		this.foods[key].Update(this.camera);
 	}
 	if(this.players[this.playerID]){
 		this.ctx.font = "30px Arial";

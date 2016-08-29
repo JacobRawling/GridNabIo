@@ -7,25 +7,30 @@ var util = require("util");			     	// Utility resources (logging, object inspec
 var p2   = require('p2');              //the physics engine
 var world;
 //
-var aiCounter= 10, nBots = 0, maxBots = 50;
+var aiCounter= 10, nBots = 0, maxBots = 30, nFoods=15, foodCounter=1000;//30;
 var players = {};
 var sockets = {};
 var bullets = {};
+var foods ={};
 var playerSeed = 0;
 var bulletSeed = 0;
 var nPlayers = 0;
-var shotDelay =  1000;
+var shotDelay =  1500;
 var worldHalfSize = 2500;
 var shootSpeed = 80;
 var maxMoveStrength = 8;
 var startingMoveStrength = 2;
-var bulletLife = 8000; //in milliseconds
+var bulletLife = 500; //in milliseconds
 var PLAYER = Math.pow(2,1);
 var BULLET = Math.pow(2,2);
 var GROUND = Math.pow(2,3);
+var FOOD = Math.pow(2,4);
 
 function GetCollisionGroup(type){
   switch(type){
+    case "food":
+      return FOOD;
+      break;
     case "bullet":
       return BULLET;
       break;
@@ -41,16 +46,16 @@ function GetCollisionGroup(type){
 function GetCollisionMask(type){
   switch(type){
     case "bullet":
-      return PLAYER | GROUND | BULLET ;
+      return PLAYER | GROUND | BULLET | FOOD;
       break;
 
     case "player":
-      return PLAYER | GROUND | BULLET;
+      return PLAYER | GROUND | BULLET | FOOD;
       break;
 
     default:
     case "ground":
-      return PLAYER | GROUND | BULLET;
+      return PLAYER | GROUND | BULLET | FOOD ;
       break;
   }
 }
@@ -67,6 +72,7 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type){
     id: playerID,
     PlayerID: playerID,
     LastShot: 0,
+    avaliableBullets: 1,
     Type: type,
     score: 0
   }
@@ -107,11 +113,20 @@ function GameObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type){
          var shape = new p2.Circle({ radius: shapeInfo  });
          shape.collisionGroup = GetCollisionGroup(type);
          shape.collisionMask = GetCollisionMask(type);
-         if(type === "bullet"){
+         if(type === "bullet" || type === "sensor"){
            shape.sensor = true;
          }
          this.body.addShape(shape);
          break;
+     case "rectangle":
+       var shape = new p2.Box(shapeInfo);
+       shape.collisionGroup = GetCollisionGroup(type);
+       shape.collisionMask = GetCollisionMask(type);
+       if(type === "bullet"){
+         shape.sensor = true;
+       }
+       this.body.addShape(shape);
+      break;
      case "plane":
         var shape = new p2.Plane();
         this.body.addShape(shape);
@@ -133,6 +148,7 @@ function AIObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type,pla
     id: playerID,
     PlayerID: playerID,
     LastShot: 0,
+    avaliableBullets: 1,
     Type: type,
     score: 0
   }
@@ -176,6 +192,15 @@ function AIObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type,pla
         var shape = new p2.Plane();
         this.body.addShape(shape);
         break;
+    case "rectangle":
+      var shape = new p2.Box(shapeInfo);
+      shape.collisionGroup = GetCollisionGroup(type);
+      shape.collisionMask = GetCollisionMask(type);
+      if(type === "bullet"){
+        shape.sensor = true;
+      }
+      this.body.addShape(shape);
+      break;
     }
   }
   this.CreateShape(shape,shapeInfo);
@@ -228,7 +253,7 @@ function AIObject(posX,posY,mass, shape, shapeInfo,displayInfo,playerID,type,pla
             x:this.shootTarget.x + getRandomArbitrary(-100,100),
             y:this.shootTarget.y + getRandomArbitrary(-100,100)
           }
-        //  shootBullet({			id: this.fullInfomation.PlayerID});
+         shootBullet({			id: this.fullInfomation.PlayerID});
 
           this.target = this.MoveTarget;
       }
@@ -254,6 +279,7 @@ init = function(){
   for(var i = 0; i < maxBots; i++)
     initBots();
 
+  initFoods();
   //Set Event handlers
   io.on('connection', onSocketConnection);
 
@@ -333,6 +359,10 @@ initPlayer = function(socket, playerName){
       socket.emit("new player", players[key].fullInfomation);
     }
   }
+  for(var key in foods){
+      socket.emit("food spawned", foods[key].fullInfomation);
+
+  }
 }
 // New player has joined
 onNewPlayer = function(data) {
@@ -346,6 +376,24 @@ onMovePlayer = function(data){
     players[data.id].target.y = data.y;
   }
 };
+spawnFood = function(){
+    newFood = new GameObject(getRandomArbitrary(-worldHalfSize,worldHalfSize),
+      getRandomArbitrary(-worldHalfSize,worldHalfSize),5,"circle",5,
+                {color: getRandomColor(),
+                 name: ""},
+                 foodCounter, "food");
+     world.addBody(newFood.body);
+     foods[foodCounter] = newFood;
+
+     io.emit("food spawned", newFood.fullInfomation);
+     foodCounter++;
+}
+
+initFoods = function(){
+  for(var i = 0; i < nFoods; i++){
+    spawnFood();
+  }
+}
 initBots = function(){
   if(nBots + nPlayers >= maxBots) return;
   var newBot = new AIObject(getRandomArbitrary(-worldHalfSize,worldHalfSize),getRandomArbitrary(-worldHalfSize,worldHalfSize),30,"circle",75,
@@ -412,7 +460,7 @@ initPhysics = function(){
   // To get the trajectories of the bodies,
   // we must step the world forward in time.
   // This is done using a fixed time step size.
-  timeStep = 1 / 60; // seconds
+  timeStep = 1 / 25; // seconds
 
   //create collision handlers
   world.on("beginContact",function(evt){
@@ -429,6 +477,8 @@ initPhysics = function(){
         HandlePlayerBulletCollison(playerBody,otherBody);
       if( otherBody.shapes[0].collisionGroup == PLAYER )
         HandlePlayerPlayerCollison(playerBody,otherBody);
+      if( otherBody.shapes[0].collisionGroup == FOOD )
+        HandlePlayerFoodCollison(playerBody,otherBody);
 
     }
     if( (bodyA.shapes[0].collisionGroup == BULLET || bodyB.shapes[0].collisionGroup == BULLET ) ){
@@ -444,6 +494,17 @@ initPhysics = function(){
   console.log("Initialized the physics engine.")
 };
 
+function HandlePlayerFoodCollison(playerBody,foodBody){
+
+  io.emit("remove food",  {id: foodBody.id});
+  io.emit("increase score", {id: playerBody.id, amount: 2});
+  io.emit("scoreboard", getLeaderBoard());
+
+  world.removeBody(foods[foodBody.id].body);
+  delete foodBody[foodBody.id];
+  spawnFood();
+}
+
 function HandlePlayerBulletCollison(playerBody,bulletBody){
 
   if(players[playerBody.id] &&  bullets[bulletBody.id] &&
@@ -453,7 +514,6 @@ function HandlePlayerBulletCollison(playerBody,bulletBody){
     if(players[playerBody.id].isBot){
         nBots--;
         initBots();
-
     }
     delete players[playerBody.id];
 
@@ -464,6 +524,7 @@ function HandlePlayerBulletCollison(playerBody,bulletBody){
       return;
     }
     players[shootingPlayer].fullInfomation.score += 10;
+    players[shootingPlayer].fullInfomation.avaliableBullets++;
 
     io.emit("player disconnected", {id: playerBody.id});
     io.emit("remove bullet",  {id: bulletBody.id});
@@ -499,32 +560,43 @@ function shootBullet( data ){
 
   //can shoot once per second
   if(players[playerID] &&
-  (new Date().getTime() - players[playerID].fullInfomation.LastShot > shotDelay)){
+  (new Date().getTime() - players[playerID].fullInfomation.LastShot > shotDelay) &&
+  (players[playerID].fullInfomation.avaliableBullets > 0)  ){
     //create the gameobject to store the body and add it to the physics engine
     var newBullet = new GameObject(
       players[playerID].body.position[0],
       players[playerID].body.position[1],
-      0,"circle",10,
+      0,"cirlce", 10+players[playerID].fullInfomation.score/2,
       players[playerID].fullInfomation.DisplayInfo,
       "b"+bulletSeed, "bullet");
 
+    players[playerID].fullInfomation.avaliableBullets--;
+    if(players[playerID].fullInfomation.score > 5){
+      players[playerID].fullInfomation.score-=5;
+      io.emit("increase score", {id: playerID, amount: -5});
+      io.emit("scoreboard", getLeaderBoard());
+    }
     newBullet.setPlayerID(playerID);
     world.addBody(newBullet.body);
+
+
+
     bullets["b"+bulletSeed] = newBullet;
 
     //shoot in the direction the player is aiming
-    /*
+
     var len = Math.sqrt(players[playerID].target.x*players[playerID].target.x+players[playerID].target.y*players[playerID].target.y);
     var velLength = ( len == 0 ? 0.0 : shootSpeed/len);
     newBullet.body.velocity[0] = velLength*players[playerID].target.x;
     newBullet.body.velocity[1] = velLength*players[playerID].target.y;
-*/
+
     //keep track of the bullets fired and who fired what
     bulletSeed++;
     players[playerID].fullInfomation.LastShot = new Date().getTime();
 
     //update all players about a bullet being fired
     io.emit("bullet fired", newBullet.fullInfomation);
+    io.emit("scoreboard", getLeaderBoard());
   }
 }
 
@@ -567,17 +639,10 @@ update = function(){
      y: bullets[id].body.position[1],
     id: bullets[id].fullInfomation.id,
     type: "bullet"} );
-    if(players[bullets[id].fullInfomation.PlayerID]){
-      bullets[id].body.position[0] = players[bullets[id].fullInfomation.PlayerID].body.position[0];
-      bullets[id].body.position[1] = players[bullets[id].fullInfomation.PlayerID].body.position[1];
-    }else{
-      io.emit("remove bullet", {id: id});
-      world.removeBody(bullets[id].body);
-      delete bullets[id];
-      continue;
-    }
 
     if(new Date().getTime() - bullets[id].fullInfomation.startTime > bulletLife){
+      if(players[bullets[id].fullInfomation.PlayerID])
+        players[bullets[id].fullInfomation.PlayerID].fullInfomation.avaliableBullets++;
       io.emit("remove bullet", {id: id});
       world.removeBody(bullets[id].body);
       delete bullets[id];
@@ -588,4 +653,4 @@ update = function(){
 }
 
 init();
-setInterval( update,1/25.0);
+setInterval( update,timeStep);
