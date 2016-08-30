@@ -7,7 +7,7 @@ var util = require("util");			     	// Utility resources (logging, object inspec
 var p2   = require('p2');              //the physics engine
 var world;
 //
-var aiCounter= 10, nBots = 0, maxBots = 30, nFoods=15, foodCounter=1000;//30;
+var aiCounter= 10, nBots = 0, maxBots = 10, nFoods=15, foodCounter=1000;//30;
 var players = {};
 var sockets = {};
 var bullets = {};
